@@ -1,0 +1,90 @@
+# generate_logo.py
+
+from PIL import Image, ImageDraw, ImageFont
+
+# Logo size
+SIZE = 1024
+
+# Colors
+GREEN = (46, 125, 50, 255)     # #2E7D32
+BLUE = (25, 118, 210, 255)     # #1976D2
+WHITE = (255, 255, 255, 255)
+
+# Create transparent image
+img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+draw = ImageDraw.Draw(img)
+
+# ---- Draw Globe ----
+center = SIZE // 2
+radius = 260
+
+draw.ellipse(
+    (center - radius, center - radius - 120,
+     center + radius, center + radius - 120),
+    outline=BLUE,
+    width=14
+)
+
+# ---- Draw Network Nodes ----
+node_positions = [
+    (center-150, center-300),
+    (center+150, center-300),
+    (center-220, center-120),
+    (center+220, center-120),
+    (center, center-200)
+]
+
+for x, y in node_positions:
+    draw.ellipse((x-12, y-12, x+12, y+12), fill=BLUE)
+
+# ---- Draw Leaf (sustainability symbol) ----
+leaf_top = (center, center-80)
+leaf_left = (center-120, center+80)
+leaf_right = (center+120, center+80)
+
+draw.polygon([leaf_top, leaf_left, leaf_right], fill=GREEN)
+
+# Leaf center line
+draw.line(
+    [(center, center-80), (center, center+80)],
+    fill=WHITE,
+    width=6
+)
+
+# ---- Text ----
+try:
+    font_title = ImageFont.truetype("arial.ttf", 90)
+    font_sub = ImageFont.truetype("arial.ttf", 40)
+except:
+    font_title = ImageFont.load_default()
+    font_sub = ImageFont.load_default()
+
+title = "DIMDEA"
+subtitle = "Decarbonization Intelligence Platform"
+
+# Title text
+bbox = draw.textbbox((0,0), title, font=font_title)
+text_width = bbox[2] - bbox[0]
+
+draw.text(
+    ((SIZE-text_width)//2, 700),
+    title,
+    fill=BLUE,
+    font=font_title
+)
+
+# Subtitle
+bbox2 = draw.textbbox((0,0), subtitle, font=font_sub)
+text_width2 = bbox2[2] - bbox2[0]
+
+draw.text(
+    ((SIZE-text_width2)//2, 820),
+    subtitle,
+    fill=GREEN,
+    font=font_sub
+)
+
+# Save logo
+img.save("assets/logo.png")
+
+print("✅ DIMDEA logo generated at assets/logo.png")
