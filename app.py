@@ -1,30 +1,58 @@
-# main.py
 import streamlit as st
-from frontend import home, login, navigation, forgot_password
 
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+from frontend.home_page import show_home_page
+from frontend.activity_input_page import show_activity_input_page
+from frontend.dashboard_page import show_dashboard_page
+from frontend.ai_insights_page import show_ai_insights_page
+from frontend.eco_challenges_page import show_eco_challenges_page
+from frontend.habit_tracker_page import show_habit_tracker_page
 
-def router():
-    if st.session_state.page == "home":
-        home.render()
-    elif st.session_state.page == "login":
-        login.render()
-    elif st.session_state.page == "forgot_password":
-        forgot_password.render()
-    elif st.session_state.page == "navigation":
-        if st.session_state.logged_in:
-            navigation.render()
-        else:
-            st.session_state.page = "home"
-            st.rerun()   # <-- use st.rerun
 
-router()
+st.set_page_config(
+    page_title="AI Personal Carbon Footprint Tracker",
+    page_icon="🌍",
+    layout="wide"
+)
 
-def load_css():
-    with open("assets/styles.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# Initialize session state
 
-load_css()
+if "activity_data" not in st.session_state:
+    st.session_state.activity_data = []
+
+if "total_emission" not in st.session_state:
+    st.session_state.total_emission = 0
+
+if "habit_data" not in st.session_state:
+    st.session_state.habit_data = []
+
+st.sidebar.title("🌍 Carbon Tracker")
+
+page = st.sidebar.radio(
+    "Navigation",
+    [
+        "Home",
+        "Activity Input",
+        "Dashboard",
+        "AI Insights",
+        "Eco Challenges",
+        "Habit Tracker"
+    ]
+)
+
+if page == "Home":
+    show_home_page()
+
+elif page == "Activity Input":
+    show_activity_input_page()
+
+elif page == "Dashboard":
+    show_dashboard_page()
+
+elif page == "AI Insights":
+    show_ai_insights_page()
+
+elif page == "Eco Challenges":
+    show_eco_challenges_page()
+
+elif page == "Habit Tracker":
+    show_habit_tracker_page()
