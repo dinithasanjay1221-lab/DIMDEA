@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+from frontend.api_client import get_ai_insights
 
 # --- THEME & UI CONFIGURATION ---
 def apply_climate_tech_theme():
@@ -100,6 +101,8 @@ def render_insights_dashboard():
     st.title("🌱 AI DECISION INTELLIGENCE")
     st.markdown("### DIMDEA PRODUCTION VERSION 2.0")
 
+    api_data = get_ai_insights()
+
     dates = [datetime.now() - timedelta(days=x) for x in range(30)]
     df = pd.DataFrame({'date': dates, 'value': np.random.normal(50, 10, 30)})
 
@@ -109,7 +112,10 @@ def render_insights_dashboard():
 
     m1, m2, m3 = st.columns(3)
     with m1:
-        st.metric("Sustainability Score", "91/100", "+5.2")
+        if api_data:
+            st.metric("Sustainability Score", f"{api_data['sustainability_score']}/100", "+5.2")
+        else:
+            st.metric("Sustainability Score", "91/100", "+5.2")
     with m2:
         st.metric("AI Decision Score", "96.4", "Optimal")
     with m3:

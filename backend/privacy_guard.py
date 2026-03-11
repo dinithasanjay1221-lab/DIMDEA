@@ -18,9 +18,17 @@ NOTE:
 - No carbon business logic
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 import hashlib
 import copy
+import logging
+
+
+# --------------------------------------------------
+# Logging (Added for backend debugging support)
+# --------------------------------------------------
+
+logger = logging.getLogger("DIMDEA.PrivacyGuard")
 
 
 class PrivacyGuard:
@@ -44,15 +52,24 @@ class PrivacyGuard:
         :param data: Structured dictionary input
         :param role: Access role (admin, analyst, viewer)
         """
+
+        # fallback safety
+        if role is None:
+            role = "viewer"
+
         self._validate_input(data, role)
+
         self.original_data = data
         self.role = role.lower()
+
+        logger.info(f"PrivacyGuard initialized with role: {self.role}")
 
     # -----------------------------
     # Input Validation
     # -----------------------------
 
     def _validate_input(self, data: Dict[str, Any], role: str) -> None:
+
         if not isinstance(data, dict):
             raise TypeError("Input data must be a dictionary.")
 
@@ -69,14 +86,16 @@ class PrivacyGuard:
         """
         return hashlib.sha256(str(value).encode()).hexdigest()
 
-    def _mask_sensitive_fields(self, data: Dict[str, Any]) -> (Dict[str, Any], List[str]):
+    def _mask_sensitive_fields(self, data: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:
         """
         Mask sensitive fields in dictionary.
         """
+
         masked_fields = []
         sanitized = copy.deepcopy(data)
 
         for key in sanitized.keys():
+
             if key.lower() in self.SENSITIVE_KEYS:
                 sanitized[key] = self._hash_value(sanitized[key])
                 masked_fields.append(key)
@@ -87,6 +106,7 @@ class PrivacyGuard:
         """
         Remove fields not in allowed list.
         """
+
         return {k: v for k, v in data.items() if k in allowed_fields}
 
     # -----------------------------
@@ -102,20 +122,27 @@ class PrivacyGuard:
         masked_fields = []
 
         if self.role == "admin":
+
             # Full access
             sanitized_data = copy.deepcopy(self.original_data)
             privacy_status = "Full Access - No Masking Applied"
 
         elif self.role == "analyst":
+
             # Mask sensitive fields
             sanitized_data, masked_fields = self._mask_sensitive_fields(self.original_data)
             privacy_status = "Sensitive Fields Masked"
 
         else:  # viewer
+
             # Only allow minimal fields
             minimized = self._minimize_data(self.original_data, self.ALLOWED_FIELDS_DEFAULT)
+
             sanitized_data, masked_fields = self._mask_sensitive_fields(minimized)
+
             privacy_status = "Restricted & Masked Access"
+
+        logger.info(f"Privacy policy applied for role: {self.role}")
 
         return {
             "sanitized_data": sanitized_data,
@@ -134,7 +161,10 @@ class PrivacyGuard:
         """
         Enforce privacy controls and return structured report.
         """
+
         result = self._apply_role_policy()
+
+        logger.info("Privacy enforcement completed")
 
         return {
             "original_fields_count": result["original_fields_count"],
@@ -164,6 +194,7 @@ if __name__ == "__main__":
     }
 
     try:
+
         print("\n===== ADMIN VIEW =====")
         admin_guard = PrivacyGuard(sample_input, role="admin")
         print(admin_guard.enforce_privacy())

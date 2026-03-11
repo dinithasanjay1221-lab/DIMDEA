@@ -3,11 +3,14 @@ import pandas as pd
 import networkx as nx
 import plotly.graph_objects as obj
 
-# Strict separation: Import backend logic
+# -------------------------------------------------
+# Strict separation: Import backend logic safely
+# -------------------------------------------------
 try:
-    from backend.analytics.network_analysis import analyze_network
+    # Attempt to import a network analyzer from backend if exists
+    from backend.simulator import analyze_network
 except ImportError:
-    # Fallback mock logic to prevent app crash while setting up backend folders
+    # Fallback mock logic to prevent app crash
     def analyze_network(data):
         G = nx.powerlaw_cluster_graph(n=10, m=2, p=0.1, seed=42)
         return {
@@ -98,6 +101,7 @@ def render_network_graph(network_data):
         x=node_x, y=node_y,
         mode='markers',
         hoverinfo='text',
+        text=list(G.nodes()),
         marker=dict(size=25, color='#00D2FF', line=dict(width=2, color='#0A192F')))
 
     fig = obj.Figure(data=[edge_trace, node_trace],
@@ -115,6 +119,16 @@ def render_network_view():
     # Top Section
     st.markdown("<h1>Industry Emission Network</h1>", unsafe_allow_html=True)
     st.markdown("<p class='subtitle'>Structural emission interdependencies and flow analysis</p>", unsafe_allow_html=True)
+
+    # -------------------------------
+    # Load uploaded dataset automatically if available
+    if "emission_data" not in st.session_state or st.session_state["emission_data"] is None:
+        if "uploaded_dataset" in st.session_state:
+            try:
+                st.session_state["emission_data"] = pd.read_csv(st.session_state["uploaded_dataset"])
+            except Exception as e:
+                st.warning(f"Failed to load uploaded dataset: {e}")
+    # -------------------------------
 
     # Session State Check
     if "emission_data" not in st.session_state or st.session_state["emission_data"] is None:

@@ -16,6 +16,13 @@ NOTE:
 """
 
 from typing import Dict, List, Any
+import logging
+
+# --------------------------------------------------
+# Logging (Added for backend debugging)
+# --------------------------------------------------
+
+logger = logging.getLogger("DIMDEA.ProgressTracker")
 
 
 class ProgressTracker:
@@ -37,6 +44,8 @@ class ProgressTracker:
         self._validate_input(input_data)
         self.baseline = input_data["baseline_emission"]
         self.history = sorted(input_data["history"], key=lambda x: x["year"])
+
+        logger.info("ProgressTracker initialized successfully")
 
     # -----------------------------
     # Input Validation
@@ -81,7 +90,8 @@ class ProgressTracker:
             prev = self.history[i - 1]["total_emission"]
             curr = self.history[i]["total_emission"]
 
-            percent_change = ((curr - prev) / prev) * 100 if prev > 0 else 0
+            # Safety check for division
+            percent_change = ((curr - prev) / prev) * 100 if prev != 0 else 0
 
             changes.append({
                 "year": self.history[i]["year"],
@@ -95,6 +105,11 @@ class ProgressTracker:
         Calculate overall change from baseline to latest year.
         """
         latest_emission = self.history[-1]["total_emission"]
+
+        # safety check
+        if self.baseline == 0:
+            return 0
+
         change = ((latest_emission - self.baseline) / self.baseline) * 100
         return round(change, 2)
 
@@ -148,11 +163,13 @@ class ProgressTracker:
     # -----------------------------
 
     def _risk_flags(self) -> List[str]:
+
         flags = []
         yearly = self._yearly_changes()
 
         # Consecutive increase detection
         consecutive_increase = 0
+
         for y in yearly:
             if y["percent_change_from_previous_year"] > 0:
                 consecutive_increase += 1
@@ -169,7 +186,11 @@ class ProgressTracker:
         # Stagnation detection
         if len(yearly) >= 2:
             recent_changes = yearly[-2:]
-            if all(abs(y["percent_change_from_previous_year"]) < self.STAGNATION_THRESHOLD_PERCENT for y in recent_changes):
+            if all(
+                abs(y["percent_change_from_previous_year"]) <
+                self.STAGNATION_THRESHOLD_PERCENT
+                for y in recent_changes
+            ):
                 flags.append("Emission reduction stagnating.")
 
         return flags
@@ -179,6 +200,7 @@ class ProgressTracker:
     # -----------------------------
 
     def generate_progress_report(self) -> Dict[str, Any]:
+
         latest_emission = self.history[-1]["total_emission"]
         overall_change = self._overall_change_from_baseline()
         yearly_changes = self._yearly_changes()
@@ -191,6 +213,8 @@ class ProgressTracker:
             f"Overall change from baseline: {overall_change}%. "
             f"Trend: {trend}. Momentum: {momentum}."
         )
+
+        logger.info("Progress report generated")
 
         return {
             "baseline": self.baseline,

@@ -16,6 +16,14 @@ Dynamic Pathfinding & Logistics Optimization Engine
 from typing import Dict, List, Tuple, Optional
 import heapq
 import math
+import logging
+
+# ==========================================================
+# ADDED: Logging Support (for backend debugging)
+# ==========================================================
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("RoutingEngine")
 
 
 class RoutingEngine:
@@ -38,6 +46,8 @@ class RoutingEngine:
         """
         self._validate_graph(graph)
         self.graph = graph
+
+        logger.info("RoutingEngine initialized with %d nodes", len(graph))
 
     # ==========================================================
     # DIJKSTRA SHORTEST PATH
@@ -63,6 +73,7 @@ class RoutingEngine:
             path = path + [node]
 
             if node == end:
+                logger.info("Dijkstra path computed: %s -> %s", start, end)
                 return path, cost
 
             for neighbor, weight in self.graph[node].items():
@@ -85,6 +96,10 @@ class RoutingEngine:
         A* pathfinding using Euclidean heuristic.
         """
 
+        # ADDED: coordinate validation
+        if start not in coordinates or end not in coordinates:
+            raise ValueError("Coordinates missing for start or end node")
+
         def heuristic(a, b):
             x1, y1 = coordinates[a]
             x2, y2 = coordinates[b]
@@ -102,6 +117,7 @@ class RoutingEngine:
             _, current = heapq.heappop(open_set)
 
             if current == end:
+                logger.info("A* path computed: %s -> %s", start, end)
                 return self._reconstruct_path(came_from, current), g_score[end]
 
             for neighbor, weight in self.graph[current].items():
@@ -151,6 +167,8 @@ class RoutingEngine:
             current = nearest
             remaining.remove(nearest)
 
+        logger.info("Multi-stop route optimized starting from %s", start)
+
         return route, total_cost
 
     # ==========================================================
@@ -165,7 +183,22 @@ class RoutingEngine:
         """
         Calculates emission impact for route.
         """
-        return distance * emission_rate_per_km
+
+        emission = distance * emission_rate_per_km
+
+        logger.info("Emission cost calculated: %.3f", emission)
+
+        return emission
+
+    # ==========================================================
+    # ADDED: Graph Getter (Useful for API debugging)
+    # ==========================================================
+
+    def get_graph(self) -> Dict[str, Dict[str, float]]:
+        """
+        Returns the current graph structure.
+        """
+        return self.graph
 
     # ==========================================================
     # INTERNAL UTILITIES

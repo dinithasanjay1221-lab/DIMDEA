@@ -1,11 +1,53 @@
 import streamlit as st
+from frontend import api_client
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
-from frontend.api_client import calculate_emissions
+from frontend.api_client import calculate_emissions, get_ai_insights
+
+# --------------------------------------------------
+# ADDED: BACKEND STATUS CHECK
+# --------------------------------------------------
+
+import requests
 
 
+def get_hotspot_data():
+    try:
+        url = "http://127.0.0.1:8000/hotspot-analysis"
+
+        payload = {
+            "transportation": 20,
+            "energy": 30,
+            "industrial": 10,
+            "waste": 5,
+            "renewable": 2,
+            "baseline": 15000
+        }
+
+        r = requests.post(url, json=payload, timeout=5)
+
+        if r.status_code == 200:
+            return r.json()
+
+    except:
+        return None
+
+
+def check_backend():
+    try:
+        r = requests.get("http://127.0.0.1:8000", timeout=3)
+        if r.status_code == 200:
+            return True
+    except Exception:
+        return False
+    return False
+
+
+# --------------------------------------------------
 # PAGE CONFIG
+# --------------------------------------------------
+
 st.set_page_config(
     page_title="DIMDEA | Carbon Intelligence Dashboard",
     page_icon="🌍",
@@ -14,19 +56,33 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# THEME (MATCHES home.py)
+# BACKEND STATUS INDICATOR
+# --------------------------------------------------
+
+backend_running = check_backend()
+
+hotspot_data = None
+
+if backend_running:
+    hotspot_data = get_hotspot_data()
+
+if backend_running:
+    st.success("Backend Connected")
+else:
+    st.warning("Backend Not Running")
+
+
+# --------------------------------------------------
+# THEME
 # --------------------------------------------------
 
 st.markdown("""
 <style>
 
-/* MAIN BACKGROUND */
 .stApp{
     background: radial-gradient(circle at top, #0a192f, #020617);
     color:white;
 }
-
-/* METRIC CARDS */
 
 .metric-card{
     background: rgba(15,23,42,0.8);
@@ -42,8 +98,6 @@ st.markdown("""
     box-shadow:0px 10px 30px rgba(0,198,255,0.35);
     border:1px solid #00c6ff;
 }
-
-/* TITLES */
 
 .metric-title{
     font-size:14px;
@@ -62,8 +116,6 @@ st.markdown("""
     font-size:13px;
     color:#cbd5e1;
 }
-
-/* INSIGHT PANEL */
 
 .insight-panel{
     background:rgba(15,23,42,0.8);
@@ -104,6 +156,43 @@ mock_data = {
 }
 
 # --------------------------------------------------
+# USE BACKEND HOTSPOT DATA IF AVAILABLE
+# --------------------------------------------------
+
+primary_hotspot = mock_data["primary_hotspot"]
+sector_df = pd.DataFrame({
+    "Sector": mock_data["sectors"],
+    "Emission": mock_data["emissions"]
+})
+
+severity = mock_data["hotspot_details"]["severity"]
+contribution = mock_data["hotspot_details"]["contribution"]
+stress_indicator = mock_data["hotspot_details"]["stress_indicator"]
+
+if hotspot_data:
+
+    primary_hotspot = hotspot_data.get("primary_hotspot", primary_hotspot)
+
+    sector_contribution = hotspot_data.get("sector_contribution_percent")
+
+    if sector_contribution:
+        sector_df = pd.DataFrame({
+            "Sector": list(sector_contribution.keys()),
+            "Emission": list(sector_contribution.values())
+        })
+
+    severity_levels = hotspot_data.get("severity_levels")
+
+    if severity_levels and primary_hotspot in severity_levels:
+        severity = severity_levels[primary_hotspot]
+
+    if sector_contribution and primary_hotspot in sector_contribution:
+        contribution = f"{sector_contribution[primary_hotspot]}%"
+
+    stress_indicator = hotspot_data.get("overall_risk_score", stress_indicator)
+
+
+# --------------------------------------------------
 # HEADER
 # --------------------------------------------------
 
@@ -139,7 +228,7 @@ with c3:
     st.markdown(f"""
     <div class="metric-card">
     <div class="metric-title">PRIMARY HOTSPOT</div>
-    <div class="metric-value">{mock_data['primary_hotspot']}</div>
+    <div class="metric-value">{primary_hotspot}</div>
     <div class="metric-desc">Highest emission sector</div>
     </div>
     """, unsafe_allow_html=True)
@@ -161,17 +250,12 @@ st.write("")
 
 st.subheader("Sector Emission Analytics")
 
-df = pd.DataFrame({
-    "Sector": mock_data["sectors"],
-    "Emission": mock_data["emissions"]
-})
-
 col1,col2 = st.columns(2)
 
 with col1:
 
     fig = px.pie(
-        df,
+        sector_df,
         values="Emission",
         names="Sector",
         hole=0.55,
@@ -190,7 +274,7 @@ with col1:
 with col2:
 
     fig = px.bar(
-        df.sort_values("Emission"),
+        sector_df.sort_values("Emission"),
         x="Emission",
         y="Sector",
         orientation="h",
@@ -219,13 +303,13 @@ with col_hot:
     st.markdown(f"""
     <div class="metric-card">
 
-    <b>Primary Sector :</b> {mock_data['primary_hotspot']}<br><br>
+    <b>Primary Sector :</b> {primary_hotspot}<br><br>
 
-    <b>Severity :</b> <span style="color:#ff4b4b">{mock_data['hotspot_details']['severity']}</span><br><br>
+    <b>Severity :</b> <span style="color:#ff4b4b">{severity}</span><br><br>
 
-    <b>Contribution :</b> {mock_data['hotspot_details']['contribution']}<br><br>
+    <b>Contribution :</b> {contribution}<br><br>
 
-    <b>Stress Indicator :</b> {mock_data['hotspot_details']['stress_indicator']*100}%
+    <b>Stress Indicator :</b> {stress_indicator}
 
     </div>
     """, unsafe_allow_html=True)
@@ -270,11 +354,23 @@ for i,(k,v) in enumerate(mock_data["esg"].items()):
 st.write("")
 st.subheader("AI Decision Insights")
 
-insights=[
-"Energy sector responsible for highest emissions (37.6%).",
-"Industrial emissions exceed 2026 baseline by 5%.",
-"Renewable adoption could reduce intensity by 18%."
-]
+backend_insights = get_ai_insights()
+
+if backend_insights:
+
+    insights=[
+        backend_insights["forecast"],
+        f"Priority Strategy: {backend_insights['priority']}",
+        f"Sustainability Score: {backend_insights['sustainability_score']}"
+    ]
+
+else:
+
+    insights=[
+        "Energy sector responsible for highest emissions (37.6%).",
+        "Industrial emissions exceed 2026 baseline by 5%.",
+        "Renewable adoption could reduce intensity by 18%."
+    ]
 
 for i in insights:
     st.markdown(f'<div class="insight-panel">{i}</div>', unsafe_allow_html=True)
@@ -294,6 +390,11 @@ with c2:
     st.caption(f"Last Updated : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 st.markdown("<center><small>DIMDEA v2.0 | Carbon Intelligence Platform</small></center>",unsafe_allow_html=True)
+
+# --------------------------------------------------
+# ORIGINAL BACKEND CALL (NOT MODIFIED)
+# --------------------------------------------------
+
 data = {
     "transportation": 20,
     "energy": 30,
@@ -302,4 +403,93 @@ data = {
 
 result = calculate_emissions(data)
 
-st.metric("Total Emissions", result["total_emissions"])
+# ADDED SAFE CHECK
+if result:
+    st.metric("Total Emissions", result["total_emissions"])
+else:
+    st.warning("Backend not running or API error.")
+
+# --------------------------------------------------
+# ROUTING INSIGHTS ANALYTICS (ADDED)
+# --------------------------------------------------
+
+st.write("")
+st.subheader("Routing Optimization Insights")
+
+routing_payload = {
+    "total_distance": 1500,
+    "total_time": 120,
+    "total_emissions": 900,
+    "fuel_consumption": 300,
+    "number_of_routes": 3,
+    "route_breakdown": [
+        {"route_id": "R1", "distance": 500, "time": 40, "emissions": 300},
+        {"route_id": "R2", "distance": 600, "time": 50, "emissions": 400},
+        {"route_id": "R3", "distance": 400, "time": 30, "emissions": 200}
+    ]
+}
+
+routing_result = api_client.routing_insights(routing_payload)
+
+if routing_result:
+
+    efficiency = routing_result.get("efficiency_metrics", {})
+    carbon = routing_result.get("carbon_analysis", {})
+    time_analysis = routing_result.get("time_analysis", {})
+    risks = routing_result.get("risk_flags", [])
+    summary = routing_result.get("insight_summary", "")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown("""
+        <div class="metric-card">
+        <div class="metric-title">Emission Intensity</div>
+        <div class="metric-value">{}</div>
+        <div class="metric-desc">CO₂ per km</div>
+        </div>
+        """.format(carbon.get("emission_intensity_per_km",0)), unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="metric-card">
+        <div class="metric-title">Carbon Efficiency</div>
+        <div class="metric-value">{}</div>
+        <div class="metric-desc">Threshold check</div>
+        </div>
+        """.format(carbon.get("carbon_efficient",False)), unsafe_allow_html=True)
+
+    with col2:
+
+        st.markdown("""
+        <div class="metric-card">
+        <div class="metric-title">Average Route Time</div>
+        <div class="metric-value">{}</div>
+        <div class="metric-desc">Minutes per route</div>
+        </div>
+        """.format(time_analysis.get("average_route_time",0)), unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="metric-card">
+        <div class="metric-title">Time Imbalance</div>
+        <div class="metric-value">{}</div>
+        <div class="metric-desc">Route distribution stability</div>
+        </div>
+        """.format(time_analysis.get("time_imbalance_detected",False)), unsafe_allow_html=True)
+
+    st.write("")
+    st.subheader("Operational Risk Flags")
+
+    if risks:
+        for r in risks:
+            st.warning(r)
+    else:
+        st.success("No routing risks detected")
+
+    st.write("")
+    st.subheader("Routing Insight Summary")
+
+    st.markdown(f'<div class="insight-panel">{summary}</div>', unsafe_allow_html=True)
+
+else:
+    st.warning("Routing insights service unavailable.")

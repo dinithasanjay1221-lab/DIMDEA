@@ -204,6 +204,70 @@ class TimeOptimizer:
 
         return self.optimize_task_schedule(tasks)
 
+
+# -----------------------------------------------------
+# ADDED FUNCTIONS (No existing code removed)
+# -----------------------------------------------------
+
+def validate_tasks(tasks: List[Dict]) -> List[Dict]:
+    """
+    Ensures tasks contain valid structure.
+    """
+
+    validated = []
+
+    for task in tasks:
+
+        if "name" not in task:
+            raise ValueError("Task must contain name")
+
+        if "duration" not in task:
+            raise ValueError("Task must contain duration")
+
+        if task["duration"] < 0:
+            raise ValueError("Task duration cannot be negative")
+
+        validated.append(task)
+
+    return validated
+
+
+def run_time_optimization(tasks: List[Dict]) -> Dict:
+    """
+    Backend helper for FastAPI.
+    """
+
+    tasks = validate_tasks(tasks)
+
+    optimizer = TimeOptimizer()
+
+    schedule = optimizer.optimize_task_schedule(tasks)
+
+    return {
+        "optimized_schedule": schedule,
+        "task_count": len(schedule)
+    }
+
+
+def get_time_dashboard_summary(tasks: List[Dict]) -> Dict:
+    """
+    Generates dashboard-friendly output.
+    """
+
+    result = run_time_optimization(tasks)
+
+    total_time = 0
+
+    for task in result["optimized_schedule"]:
+        total_time = max(total_time, task["end"])
+
+    return {
+        "total_tasks": result["task_count"],
+        "total_time_required": total_time,
+        "schedule": result["optimized_schedule"]
+    }
+
+
 # -----------------------------------------------------
 # Example Usage (Safe to Run)
 # -----------------------------------------------------

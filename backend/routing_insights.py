@@ -16,6 +16,15 @@ NOTE:
 
 from typing import Dict, List, Any
 import statistics
+import logging
+
+
+# ==========================================================
+# ADDED: Logging Support
+# ==========================================================
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("RoutingInsights")
 
 
 class RoutingInsights:
@@ -42,6 +51,8 @@ class RoutingInsights:
         """
         self._validate_input(routing_data)
         self.routing_data = routing_data
+
+        logger.info("RoutingInsights initialized successfully")
 
     # -----------------------------
     # Input Validation
@@ -181,12 +192,60 @@ class RoutingInsights:
         else:
             summary += "Routing performance is within optimal limits."
 
+        logger.info("Routing insights generated")
+
         return {
             "efficiency_metrics": efficiency,
             "carbon_analysis": carbon,
             "time_analysis": time,
             "risk_flags": risks,
             "insight_summary": summary
+        }
+
+    # ==========================================================
+    # ADDED: Public Export Function (Useful for APIs)
+    # ==========================================================
+
+    def export_insights(self) -> Dict[str, Any]:
+        """
+        Wrapper function used by API layer to safely export insights.
+        """
+        try:
+            insights = self.generate_insights()
+            logger.info("Insights exported successfully")
+            return insights
+        except Exception as e:
+            logger.error("Error exporting insights: %s", str(e))
+            return {
+                "error": "Insight generation failed",
+                "details": str(e)
+            }
+
+    # ==========================================================
+    # ADDED: Summary Statistics
+    # ==========================================================
+
+    def basic_statistics(self) -> Dict[str, float]:
+        """
+        Provides quick statistics useful for dashboards.
+        """
+        routes = self.routing_data.get("route_breakdown", [])
+
+        if not routes:
+            return {
+                "avg_distance": 0,
+                "avg_time": 0,
+                "avg_emissions": 0
+            }
+
+        distances = [r["distance"] for r in routes]
+        times = [r["time"] for r in routes]
+        emissions = [r["emissions"] for r in routes]
+
+        return {
+            "avg_distance": round(statistics.mean(distances), 2),
+            "avg_time": round(statistics.mean(times), 2),
+            "avg_emissions": round(statistics.mean(emissions), 2)
         }
 
 

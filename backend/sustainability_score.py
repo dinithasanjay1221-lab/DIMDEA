@@ -77,6 +77,9 @@ class SustainabilityScoreEngine:
     # -----------------------------
 
     def calculate_score(self, metrics: Dict[str, float]) -> Dict[str, float]:
+
+    # Validate inputs first
+        metrics = validate_metrics(metrics)
         """
         Calculate sustainability score.
         Required metrics:
@@ -134,6 +137,75 @@ class SustainabilityScoreEngine:
             return "Needs Improvement"
 
 
+# -----------------------------
+# ADDED: Safe Metric Validation
+# -----------------------------
+
+def validate_metrics(metrics: Dict[str, float]) -> Dict[str, float]:
+    """
+    Ensures metrics contain valid numeric values.
+    """
+    validated = {}
+
+    for key, value in metrics.items():
+
+        if not isinstance(value, (int, float)):
+            raise ValueError(f"{key} must be numeric")
+
+        if value < 0:
+            raise ValueError(f"{key} cannot be negative")
+
+        validated[key] = float(value)
+
+    return validated
+
+
+# -----------------------------
+# ADDED: Backend Helper Function
+# -----------------------------
+
+def compute_sustainability_score(metrics: Dict[str, float]) -> Dict[str, float]:
+    """
+    Helper function for FastAPI backend usage.
+    """
+
+    validated_metrics = validate_metrics(metrics)
+
+    engine = SustainabilityScoreEngine()
+    result = engine.calculate_score(validated_metrics)
+    result["interpretation"] = interpret_score(result["sustainability_score"])["interpretation"]
+    return result
+# -----------------------------
+# ADDED: Dashboard Friendly Output
+# -----------------------------
+
+def get_dashboard_summary(metrics: Dict[str, float]) -> Dict[str, float]:
+    """
+    Returns simplified output useful for dashboards.
+    """
+
+    result = compute_sustainability_score(metrics)
+
+    return {
+        "score": result["sustainability_score"],
+        "rating": result["rating"],
+        "metrics": result["normalized_metrics"]
+    }
+
+def interpret_score(score: float) -> Dict[str, str]:
+
+    if score >= 85:
+        message = "Organization is highly sustainable."
+    elif score >= 70:
+        message = "Sustainability practices are good but can improve."
+    elif score >= 50:
+        message = "Moderate sustainability performance."
+    else:
+        message = "Urgent sustainability improvements required."
+
+    return {
+        "interpretation": message
+    }
 # -----------------------------
 # Example Usage (Safe to Run)
 # -----------------------------

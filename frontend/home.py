@@ -1,20 +1,17 @@
-# home.py
 import streamlit as st
 
 def render():
 
+    # ------------------- PAGE CONFIG -------------------
     st.set_page_config(
         page_title="DIMDEA",
         page_icon="🌍",
         layout="wide"
     )
 
-    # --------------------------------------------------
-    # CUSTOM CSS
-    # --------------------------------------------------
+    # ------------------- CUSTOM CSS -------------------
     st.markdown("""
     <style>
-
     .stApp {
         background: radial-gradient(circle at top, #0a192f, #020617);
         color: white;
@@ -170,27 +167,20 @@ def render():
     </style>
     """, unsafe_allow_html=True)
 
-    # --------------------------------------------------
-    # TOP RIGHT LOGIN BUTTON
-    # --------------------------------------------------
+    # ------------------- TOP RIGHT LOGIN BUTTON -------------------
     col1, col2, col3 = st.columns([8,1,1])
-
     with col3:
         if st.button("🔐 Login"):
-            st.switch_page("pages/login.py")
+            st.session_state.page = "login"
+            st.rerun()  # Navigate to login module
 
-    # --------------------------------------------------
-    # HERO SECTION
-    # --------------------------------------------------
+    # ------------------- HERO SECTION -------------------
     st.markdown('<div class="hero-title">DIMDEA</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">AI-Driven Carbon Neutralization Planning System</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-tagline">Transforming Emission Data into Intelligent Sustainability Strategy</div>', unsafe_allow_html=True)
 
-    # --------------------------------------------------
-    # ABOUT + EARTH
-    # --------------------------------------------------
+    # ------------------- ABOUT + EARTH -------------------
     col_left, col_right = st.columns([1,1])
-
     with col_left:
         st.markdown("""
         <div style="font-size:18px; color:#cbd5e1; padding:40px;">
@@ -205,7 +195,6 @@ def render():
         enterprise-grade sustainability transformation.
         </div>
         """, unsafe_allow_html=True)
-
     with col_right:
         st.markdown("""
         <div class="earth-wrapper">
@@ -215,13 +204,10 @@ def render():
         </div>
         """, unsafe_allow_html=True)
 
-    # --------------------------------------------------
-    # FEATURES
-    # --------------------------------------------------
+    # ------------------- FEATURES -------------------
     st.markdown('<div class="section-title">Core Intelligence Modules</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
-
     with col1:
         st.markdown("""
         <div class="feature-card">
@@ -231,7 +217,6 @@ def render():
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with col2:
         st.markdown("""
         <div class="feature-card">
@@ -241,7 +226,6 @@ def render():
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with col3:
         st.markdown("""
         <div class="feature-card">
@@ -253,7 +237,6 @@ def render():
         """, unsafe_allow_html=True)
 
     col4, col5, col6 = st.columns(3)
-
     with col4:
         st.markdown("""
         <div class="feature-card">
@@ -263,7 +246,6 @@ def render():
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with col5:
         st.markdown("""
         <div class="feature-card">
@@ -273,7 +255,6 @@ def render():
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with col6:
         st.markdown("""
         <div class="feature-card">
@@ -284,11 +265,10 @@ def render():
         </div>
         """, unsafe_allow_html=True)
 
-    # --------------------------------------------------
-    # FOOTER
-    # --------------------------------------------------
+    # ------------------- FOOTER -------------------
     st.markdown('<div class="footer">Built for Intelligent Sustainability 🌍 | Powered by AI</div>', unsafe_allow_html=True)
 
 
+# ------------------- RUN MODULE -------------------
 if __name__ == "__main__":
     render()

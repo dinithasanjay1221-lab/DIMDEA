@@ -16,6 +16,13 @@ NOTE:
 """
 
 from typing import Dict, Any
+import logging   # ✅ ADDED (for backend debugging)
+
+# ======================================================
+# LOGGER (SAFE DEBUGGING SUPPORT)
+# ======================================================
+
+logger = logging.getLogger("DIMDEA.RenewableEngine")
 
 
 class RenewableEngine:
@@ -37,6 +44,7 @@ class RenewableEngine:
         """
         Initialize RenewableEngine with structured renewable data.
         """
+        logger.info("Initializing RenewableEngine")   # ✅ ADDED
         self._validate_input(input_data)
         self.data = input_data
 
@@ -122,36 +130,48 @@ class RenewableEngine:
         Generate renewable transition analysis.
         """
 
-        current_percent = self.data["renewable_share_percent"]
-        target_percent = self.data["target_renewable_percent"]
+        try:
 
-        current_emissions = self._calculate_emissions(current_percent)
-        projected_emissions = self._calculate_emissions(target_percent)
+            current_percent = self.data["renewable_share_percent"]
+            target_percent = self.data["target_renewable_percent"]
 
-        reduction_data = self._calculate_reduction(
-            current_emissions,
-            projected_emissions
-        )
+            current_emissions = self._calculate_emissions(current_percent)
+            projected_emissions = self._calculate_emissions(target_percent)
 
-        impact = self._impact_level(reduction_data["reduction_percent"])
+            reduction_data = self._calculate_reduction(
+                current_emissions,
+                projected_emissions
+            )
 
-        renewable_increase = target_percent - current_percent
+            impact = self._impact_level(reduction_data["reduction_percent"])
 
-        summary = (
-            f"Renewable share increases by {renewable_increase:.2f}%. "
-            f"Estimated emission reduction: {reduction_data['reduction_percent']}%. "
-            f"Impact classification: {impact}."
-        )
+            renewable_increase = target_percent - current_percent
 
-        return {
-            "current_emissions": round(current_emissions, 2),
-            "projected_emissions": round(projected_emissions, 2),
-            "emission_reduction": reduction_data["reduction"],
-            "reduction_percent": reduction_data["reduction_percent"],
-            "renewable_increase_needed": round(renewable_increase, 2),
-            "impact_level": impact,
-            "analysis_summary": summary
-        }
+            summary = (
+                f"Renewable share increases by {renewable_increase:.2f}%. "
+                f"Estimated emission reduction: {reduction_data['reduction_percent']}%. "
+                f"Impact classification: {impact}."
+            )
+
+            result = {
+                "current_emissions": round(current_emissions, 2),
+                "projected_emissions": round(projected_emissions, 2),
+                "emission_reduction": reduction_data["reduction"],
+                "reduction_percent": reduction_data["reduction_percent"],
+                "renewable_increase_needed": round(renewable_increase, 2),
+                "impact_level": impact,
+                "analysis_summary": summary
+            }
+
+            logger.info("Renewable transition analysis completed successfully")  # ✅ ADDED
+
+            return result
+
+        except Exception as e:
+
+            logger.error(f"RenewableEngine analysis failed: {e}")  # ✅ ADDED
+
+            raise
 
 
 # ---------------------------------------

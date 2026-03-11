@@ -14,28 +14,28 @@ router = APIRouter(
 # -----------------------------------------
 # HEALTH CHECK
 # -----------------------------------------
-
 @router.get("/health")
 def health_check():
+    """
+    Simple health check endpoint.
+    Returns "healthy" if API is running.
+    """
     return {"status": "healthy"}
-
 
 # -----------------------------------------
 # CARBON CALCULATION
 # -----------------------------------------
-
 @router.post("/calculate", response_model=EmissionOutput)
 def calculate_emissions(
     data: EmissionInput
 ):
+    """
+    Calculates total carbon emissions based on input data.
+    Saves the record into the database.
+    """
+    total = data.transportation + data.energy + data.industrial
 
-    total = (
-        data.transportation +
-        data.energy +
-        data.industrial
-    )
-
-    # SAVE DATA INTO DATABASE
+    # Save data into database
     create_emission_record({
         "transportation": data.transportation,
         "energy": data.energy,
@@ -54,7 +54,9 @@ def calculate_emissions(
 
 @router.post("/carbon-engine")
 def carbon_engine(data: EmissionInput):
-
+    """
+    Uses the backend carbon engine to calculate detailed emissions.
+    """
     result = calculate_total_emissions(
         data.transportation,
         data.energy,

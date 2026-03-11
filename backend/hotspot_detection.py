@@ -41,6 +41,9 @@ class HotspotDetector:
     # ==========================================================
 
     def __init__(self, emission_data: Dict[str, float]):
+        """
+        Initialize detector with emission dataset.
+        """
         self._validate_input(emission_data)
         self.data = deepcopy(emission_data)
         self.baseline = emission_data["baseline"]
@@ -67,7 +70,7 @@ class HotspotDetector:
 
         return {
             "ranked_sectors": ranked,
-            "primary_hotspot": ranked[0][0],
+            "primary_hotspot": ranked[0][0] if ranked else None,
             "severity_levels": severity,
             "baseline_deviation_percent": deviation,
             "sector_contribution_percent": contribution,
@@ -95,10 +98,12 @@ class HotspotDetector:
         """
         Flag sectors exceeding threshold percentage of total emissions.
         """
+
         total = self._total_emissions()
-        severity = {}
+        severity: Dict[str, str] = {}
 
         for sector, value in self._emission_only_data().items():
+
             percent = (value / total) * 100 if total > 0 else 0
 
             if percent >= threshold_percent * 1.5:
@@ -118,10 +123,13 @@ class HotspotDetector:
         """
         Calculate deviation percentage from baseline.
         """
-        deviation = {}
+
+        deviation: Dict[str, float] = {}
 
         for sector, value in self._emission_only_data().items():
+
             percent = (value / self.baseline) * 100 if self.baseline > 0 else 0
+
             deviation[sector] = round(percent, 2)
 
         return deviation
@@ -130,11 +138,15 @@ class HotspotDetector:
         """
         Calculate sector contribution percentage.
         """
+
         total = self._total_emissions()
-        contribution = {}
+
+        contribution: Dict[str, float] = {}
 
         for sector, value in self._emission_only_data().items():
+
             percent = (value / total) * 100 if total > 0 else 0
+
             contribution[sector] = round(percent, 2)
 
         return contribution
@@ -143,25 +155,31 @@ class HotspotDetector:
         """
         Identify sectors contributing more than 40%.
         """
+
+        DOMINANCE_THRESHOLD = 40
+
         return [
             sector for sector, percent in contribution.items()
-            if percent > 40
+            if percent > DOMINANCE_THRESHOLD
         ]
 
     def _multi_sector_stress_detection(self, severity: Dict) -> bool:
         """
         Detect if two or more sectors are High or Critical.
         """
+
         high_count = sum(
             1 for level in severity.values()
             if level in ["High", "Critical"]
         )
+
         return high_count >= 2
 
     def _calculate_overall_risk_score(self, severity: Dict, deviation: Dict) -> float:
         """
         Compute aggregated risk score.
         """
+
         severity_weight = {
             "Low": 1,
             "Medium": 2,
@@ -174,7 +192,7 @@ class HotspotDetector:
             for level in severity.values()
         )
 
-        deviation_score = sum(deviation.values()) / len(deviation)
+        deviation_score = sum(deviation.values()) / len(deviation) if deviation else 0
 
         return severity_score + deviation_score
 
@@ -186,6 +204,7 @@ class HotspotDetector:
         """
         Return emission sectors excluding baseline.
         """
+
         return {
             k: v for k, v in self.data.items()
             if k != "baseline"
@@ -195,17 +214,22 @@ class HotspotDetector:
         """
         Calculate total emissions excluding baseline.
         """
+
         return sum(self._emission_only_data().values())
 
     def _validate_input(self, data: Dict):
         """
         Validate required fields and numeric types.
         """
+
         for field in self.REQUIRED_FIELDS:
+
             if field not in data:
                 raise ValueError(f"Missing field: {field}")
+
             if not isinstance(data[field], (int, float)):
                 raise TypeError(f"{field} must be numeric")
+
             if data[field] < 0:
                 raise ValueError(f"{field} cannot be negative")
 

@@ -29,6 +29,13 @@ class EmissionSimulator:
     ]
 
     # ==========================================================
+    # NEW CONSTANTS (ADDED)
+    # ==========================================================
+
+    FOSSIL_SECTORS = ["transportation", "energy", "industrial"]
+    EMISSION_SECTORS = ["transportation", "energy", "industrial", "waste"]
+
+    # ==========================================================
     # INITIALIZATION
     # ==========================================================
 
@@ -203,6 +210,46 @@ class EmissionSimulator:
             return "Moderate"
         else:
             return "Low"
+
+    # ==========================================================
+    # NEW HELPER METHODS (ADDED)
+    # ==========================================================
+
+    def get_sector_breakdown(self, data: Dict[str, float]) -> Dict[str, float]:
+        """
+        Returns percentage contribution of each sector.
+        Useful for dashboards.
+        """
+        total = self._calculate_total(data)
+        breakdown = {}
+
+        if total <= 0:
+            return breakdown
+
+        for sector in ["transportation", "energy", "industrial", "waste"]:
+            breakdown[sector] = round((data[sector] / total) * 100, 2)
+
+        return breakdown
+
+    def calculate_carbon_intensity(self, total_emission: float, activity_level: float):
+        """
+        Calculates carbon intensity per activity unit.
+        """
+        if activity_level == 0:
+            return 0
+        return round(total_emission / activity_level, 4)
+
+    def simulation_summary(self, simulation_result: Dict):
+        """
+        Generates a quick summary report of the simulation.
+        """
+        return {
+            "reduction_percent": simulation_result.get("reduction_percent"),
+            "risk_before": simulation_result.get("risk_level_before"),
+            "risk_after": simulation_result.get("risk_level_after"),
+            "sustainability_gain": simulation_result.get("sustainability_improvement_percent")
+        }
+
 
 # ==========================================================
 # TEST BLOCK (Safe to Run Directly)

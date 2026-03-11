@@ -137,6 +137,12 @@ if uploaded_file is not None:
             save_path = "data/user_inputs.csv"
             df.to_csv(save_path, index=False)
 
+            # -----------------------------
+            # ADDED FOR DIMDEA FRONTEND INTEGRATION
+            # Store uploaded dataset path in session_state
+            st.session_state.uploaded_dataset = save_path
+            # -----------------------------
+
             # --- FINAL SUCCESS NOTIFICATION ---
             st.success("✅ **Dataset uploaded and validated successfully!**")
             
@@ -154,4 +160,4 @@ else:
 
 # --- FOOTER ---
 st.markdown("---")
-st.caption("DIMDEA Climate Intelligence Platform | Proprietary UI for Dataset Ingestion")  
+st.caption("DIMDEA Climate Intelligence Platform | Proprietary UI for Dataset Ingestion")

@@ -2,6 +2,7 @@
 
 import streamlit as st
 import matplotlib.pyplot as plt
+from api_client import calculate_emissions   # ADDED: API integration
 
 def apply_dimdea_theme():
     """Applies the DIMDEA Dark Gradient Glassmorphism UI."""
@@ -73,7 +74,21 @@ def render():
     baseline = st.session_state.get("baseline", 15000)
 
     # ==================================================
-    # Basic Calculations (Frontend Only)
+    # ADDED: Send data to backend API (safe fallback)
+    # ==================================================
+    payload = {
+        "transportation": data.get("transportation", 0),
+        "energy": data.get("energy", 0),
+        "industrial": data.get("industrial", 0),
+        "waste": data.get("waste", 0),
+        "renewable": data.get("renewable", 0),
+        "baseline": baseline
+    }
+
+    api_result = calculate_emissions(payload)
+
+    # ==================================================
+    # Basic Calculations (Frontend Only - original logic)
     # ==================================================
     total_emissions = (
         data.get("transportation", 0)

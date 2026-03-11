@@ -48,7 +48,6 @@ def calculate_environmental_score(
     if renewable < 0 or renewable > 1:
         raise ValueError("renewable_energy_ratio must be between 0 and 1.")
 
-    # Normalize negatively contributing factors
     environmental_raw = (
         (100 / (1 + carbon)) * 0.35 +
         (100 / (1 + energy)) * 0.25 +
@@ -163,6 +162,42 @@ def generate_esg_report(
     }
 
 
+# ==========================================================
+# INTEGRATION WRAPPER (For Backend ↔ Frontend Connection)
+# ==========================================================
+
+def run_esg_analysis(data: Dict[str, float]) -> Dict[str, float]:
+    """
+    Runs the complete ESG scoring pipeline.
+
+    This wrapper allows APIs or frontend code to call ESG
+    analysis with one function instead of multiple steps.
+    """
+
+    env_score = calculate_environmental_score(
+        carbon_emissions=data["carbon_emissions"],
+        energy_consumption=data["energy_consumption"],
+        waste_generated=data["waste_generated"],
+        renewable_energy_ratio=data["renewable_energy_ratio"]
+    )
+
+    soc_score = calculate_social_score(
+        employee_welfare=data["employee_welfare"],
+        community_engagement=data["community_engagement"],
+        diversity_ratio=data["diversity_ratio"],
+        workplace_safety=data["workplace_safety"]
+    )
+
+    gov_score = calculate_governance_score(
+        compliance_rating=data["compliance_rating"],
+        transparency_index=data["transparency_index"],
+        board_independence_ratio=data["board_independence_ratio"],
+        risk_management_score=data["risk_management_score"]
+    )
+
+    return generate_esg_report(env_score, soc_score, gov_score)
+
+
 # =========================
 # TEST BLOCK
 # =========================
@@ -171,27 +206,23 @@ if __name__ == "__main__":
 
     print("=== ESG Reporting Module Test ===")
 
-    env_score = calculate_environmental_score(
-        carbon_emissions=50,
-        energy_consumption=40,
-        waste_generated=30,
-        renewable_energy_ratio=0.6
-    )
+    sample_data = {
+        "carbon_emissions": 50,
+        "energy_consumption": 40,
+        "waste_generated": 30,
+        "renewable_energy_ratio": 0.6,
 
-    soc_score = calculate_social_score(
-        employee_welfare=80,
-        community_engagement=75,
-        diversity_ratio=0.7,
-        workplace_safety=85
-    )
+        "employee_welfare": 80,
+        "community_engagement": 75,
+        "diversity_ratio": 0.7,
+        "workplace_safety": 85,
 
-    gov_score = calculate_governance_score(
-        compliance_rating=90,
-        transparency_index=85,
-        board_independence_ratio=0.65,
-        risk_management_score=88
-    )
+        "compliance_rating": 90,
+        "transparency_index": 85,
+        "board_independence_ratio": 0.65,
+        "risk_management_score": 88
+    }
 
-    report = generate_esg_report(env_score, soc_score, gov_score)
+    report = run_esg_analysis(sample_data)
 
     print(report)

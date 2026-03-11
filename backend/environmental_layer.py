@@ -134,3 +134,69 @@ class EnvironmentalScorer:
             "monte_carlo_range": (min(monte_carlo), max(monte_carlo)),
             "sensitivity_analysis": sensitivity,
         }
+
+
+# ----------------------------------------------------------
+# INTEGRATION WRAPPER (FOR BACKEND ↔ FRONTEND CONNECTION)
+# ----------------------------------------------------------
+
+def run_environmental_analysis(
+    emissions_data: Dict[str, float],
+    location: str = "Global"
+) -> Dict[str, Any]:
+    """
+    Runs the full environmental intelligence pipeline.
+
+    This function is designed for API usage and frontend integration.
+    """
+
+    logger.info("Running environmental analysis pipeline...")
+
+    # Core environmental load
+    env_layer = EnvironmentalLayer(emissions_data)
+    base_analysis = env_layer.analyze()
+
+    # Climate risk evaluation
+    risk_model = RiskCalculator()
+    risk_data = risk_model.evaluate_risks(location)
+
+    # Grid carbon intensity
+    grid_model = GridIntensityModel()
+    grid_data = grid_model.estimate_grid_intensity(location)
+
+    # ESG scoring
+    scorer = EnvironmentalScorer()
+
+    facility_context = {
+        "carbon_intensity_factor": grid_data["carbon_intensity"],
+        "air_quality_index": random.uniform(40, 120)
+    }
+
+    esg_scores = scorer.compute_scores(facility_context, risk_data)
+
+    return {
+        "environmental_analysis": base_analysis,
+        "climate_risk": risk_data,
+        "grid_intensity": grid_data,
+        "esg_scores": esg_scores
+    }
+
+
+# ----------------------------------------------------------
+# TEST BLOCK
+# ----------------------------------------------------------
+
+if __name__ == "__main__":
+
+    sample_data = {
+        "transportation": 2500,
+        "energy": 4000,
+        "industrial": 3500,
+        "waste": 900,
+        "renewable": 600
+    }
+
+    result = run_environmental_analysis(sample_data, location="India")
+
+    print("\n===== DIMDEA Environmental Intelligence =====\n")
+    print(json.dumps(result, indent=2))

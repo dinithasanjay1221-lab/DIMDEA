@@ -12,6 +12,10 @@ from scipy.optimize import linprog
 from sklearn.linear_model import LinearRegression
 
 
+# ==========================================================
+# INTERNAL VALIDATION UTILITIES
+# ==========================================================
+
 def _validate_non_negative_list(values: List[float], name: str) -> np.ndarray:
     if not isinstance(values, list) or len(values) == 0:
         raise ValueError(f"{name} must be a non-empty list.")
@@ -32,6 +36,10 @@ def _validate_positive_number(value: float, name: str) -> float:
         raise ValueError(f"{name} must be greater than zero.")
     return float(value)
 
+
+# ==========================================================
+# EMISSION COST OPTIMIZATION
+# ==========================================================
 
 def optimize_emission_reduction(
     cost_coefficients: List[float],
@@ -72,6 +80,10 @@ def optimize_emission_reduction(
     }
 
 
+# ==========================================================
+# TARGET REDUCTION OPTIMIZATION
+# ==========================================================
+
 def optimize_for_target_reduction(
     reduction_potentials: List[float],
     target_reduction: float
@@ -106,6 +118,10 @@ def optimize_for_target_reduction(
     }
 
 
+# ==========================================================
+# MACHINE LEARNING MODEL TRAINING
+# ==========================================================
+
 def train_reduction_model(X: np.ndarray, y: np.ndarray) -> LinearRegression:
 
     if not isinstance(X, np.ndarray) or not isinstance(y, np.ndarray):
@@ -129,13 +145,36 @@ def train_reduction_model(X: np.ndarray, y: np.ndarray) -> LinearRegression:
     return model
 
 
-# =========================
+# ==========================================================
+# ADDED: SAFE PREDICTION HELPER (NON-BREAKING)
+# ==========================================================
+
+def predict_reduction(model: LinearRegression, X_new: np.ndarray) -> np.ndarray:
+    """
+    Predict emission reductions using trained model.
+    This function does not modify existing logic.
+    """
+
+    if not isinstance(model, LinearRegression):
+        raise ValueError("model must be a trained LinearRegression instance.")
+
+    if not isinstance(X_new, np.ndarray):
+        raise ValueError("X_new must be a numpy array.")
+
+    if X_new.ndim != 2:
+        raise ValueError("X_new must be a 2D array.")
+
+    return model.predict(X_new)
+
+
+# ==========================================================
 # TEST BLOCK
-# =========================
+# ==========================================================
 
 if __name__ == "__main__":
 
     print("=== Testing optimize_emission_reduction ===")
+
     costs = [100, 150, 200]
     reductions = [10, 20, 30]
     budget = 300
@@ -144,15 +183,18 @@ if __name__ == "__main__":
     print(result1)
 
     print("\n=== Testing optimize_for_target_reduction ===")
+
     target = 25
     result2 = optimize_for_target_reduction(reductions, target)
     print(result2)
 
     print("\n=== Testing train_reduction_model ===")
+
     X = np.array([[1, 2], [2, 3], [3, 4], [4, 5]])
     y = np.array([10, 15, 20, 25])
 
     model = train_reduction_model(X, y)
-    prediction = model.predict(np.array([[5, 6]]))
+
+    prediction = predict_reduction(model, np.array([[5, 6]]))
 
     print("Prediction for [5,6]:", prediction)

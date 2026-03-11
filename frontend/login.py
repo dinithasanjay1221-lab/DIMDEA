@@ -4,25 +4,15 @@ import sys
 import os
 import requests
 
+# ------------------- PATH SETUP -------------------
 sys.path.append(os.path.abspath("backend"))
 
 from api.auth import validate_user, register_user, generate_otp
-from forgot_password import forgot_password_ui
+from frontend.forgot_password import forgot_password_ui  # relative import
 
-# --- SESSION STATE ---
+# ------------------- SESSION STATE -------------------
 if "page" not in st.session_state:
-    st.session_state.page = "login"def login_user(username, password):
-
-    response = requests.post(
-        "http://127.0.0.1:8000/api/login",
-        json={
-            "username": username,
-            "password": password
-        }
-    )
-
-    return response.json()
-sys.path.append(os.path.abspath("backend"))
+    st.session_state.page = "login"
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -39,11 +29,12 @@ if "otp_sent" not in st.session_state:
 if "generated_otp" not in st.session_state:
     st.session_state.generated_otp = None
 
-# --- UI CONFIG ---
-st.set_page_config(page_title="Dimdea Auth", page_icon="🔵", layout="wide")
+# ------------------- PAGE CONFIG -------------------
+st.set_page_config(page_title="DIMDEA Auth", page_icon="🔵", layout="wide")
 
-# --- CSS ---
-st.markdown("""<style>
+# ------------------- CSS -------------------
+st.markdown("""
+<style>
 .stApp {background: radial-gradient(circle at top,#0a192f,#020617);color:white;}
 .hero-title{font-size:80px;font-weight:900;background:linear-gradient(90deg,#00c6ff,#0072ff);
 -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:50px;margin-bottom:10px;text-align:center;}
@@ -55,9 +46,10 @@ border-radius:10px;font-weight:900;font-size:18px;width:100%;}
 button[data-baseweb="tab"] p{color:white;font-weight:800;}
 .stTabs [data-baseweb="tab-list"]{justify-content:center;}
 a{color:#00c6ff;text-decoration:none;font-weight:800;}
-</style>""", unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
-
+# ------------------- LOGIN UI -------------------
 def login_ui():
     st.markdown('<div class="hero-title">DIMDEA</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">ACCESS CONTROL SYSTEM</div>', unsafe_allow_html=True)
@@ -67,14 +59,13 @@ def login_ui():
     with col_mid:
         tab1, tab2 = st.tabs(["🔑 LOGIN", "📝 REGISTER"])
 
-        # ---------------- LOGIN ----------------
+        # ---------- LOGIN ----------
         with tab1:
             identifier = st.text_input("USERNAME OR EMAIL", key="login_identifier")
             login_password = st.text_input("PASSWORD", type="password", key="login_password")
 
             st.write("---")
             st.markdown("**SECURITY VERIFICATION**")
-
             verify_choice = st.radio("", ["Email OTP", "SMS Code"], label_visibility="collapsed", key="login_verify_choice")
 
             if st.button("AUTHENTICATE", key="login_authenticate"):
@@ -107,7 +98,7 @@ def login_ui():
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # ---------------- REGISTER ----------------
+        # ---------- REGISTER ----------
         with tab2:
             reg_username = st.text_input("CHOOSE USERNAME", key="register_username")
             reg_password = st.text_input("CREATE PASSWORD", type="password", key="register_password")
@@ -121,26 +112,14 @@ def login_ui():
                 else:
                     st.error("USER ALREADY EXISTS")
 
-
-# ---------- APP FLOW ----------
-if st.session_state.page == "login":
-    login_ui()
-elif st.session_state.page == "forgot":
-    forgot_password_ui()
-elif st.session_state.logged_in:
-    try:
-        import navigation
+def render():
+    if st.session_state.page == "login":
+        login_ui()
+    elif st.session_state.page == "forgot":
+        forgot_password_ui()
+    elif st.session_state.logged_in:
+        from frontend import navigation
         navigation.run_navigation()
-    except:
-        st.success("LOGIN SUCCESS")
-def login_user(username, password):
 
-    response = requests.post(
-        "http://127.0.0.1:8000/api/login",
-        json={
-            "username": username,
-            "password": password
-        }
-    )
-
-    return response.json()
+def render():
+    login_ui()

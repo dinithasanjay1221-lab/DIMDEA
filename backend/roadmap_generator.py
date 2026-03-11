@@ -122,6 +122,7 @@ def generate_sustainability_roadmap(
     annual_budget = budget_total / years
 
     for year in range(1, years + 1):
+
         remaining_emissions -= annual_reduction_amount
         remaining_emissions = _clamp_non_negative(remaining_emissions)
 
@@ -147,6 +148,52 @@ def generate_sustainability_roadmap(
 
 
 # =========================
+# NEW: FRONTEND FRIENDLY FORMATTER
+# =========================
+
+def format_roadmap_steps(roadmap_data: Dict[str, object]) -> List[str]:
+    """
+    Convert structured roadmap timeline into simple readable steps.
+    Useful for Streamlit frontend display.
+    """
+
+    steps = []
+
+    for item in roadmap_data["timeline"]:
+        step = (
+            f"Year {item['year']}: "
+            f"Target emissions {item['target_emission_level']} | "
+            f"Action intensity: {item['recommended_action_intensity']} | "
+            f"Budget allocated: ${item['allocated_budget']}"
+        )
+
+        steps.append(step)
+
+    return steps
+
+
+# =========================
+# NEW: SIMPLE GENERATOR FOR API
+# =========================
+
+def generate_simple_roadmap() -> List[str]:
+    """
+    Wrapper function used by FastAPI and frontend.
+    Generates a default roadmap.
+    """
+
+    roadmap = generate_sustainability_roadmap(
+        current_emissions=1000,
+        target_reduction_percentage=0.5,
+        years_to_target=5,
+        esg_score=75,
+        budget=500000
+    )
+
+    return format_roadmap_steps(roadmap)
+
+
+# =========================
 # TEST BLOCK
 # =========================
 
@@ -163,3 +210,10 @@ if __name__ == "__main__":
     )
 
     print(roadmap)
+
+    print("\nFormatted Roadmap Steps:\n")
+
+    steps = format_roadmap_steps(roadmap)
+
+    for step in steps:
+        print(step)

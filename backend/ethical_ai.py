@@ -16,12 +16,31 @@ No UI code included.
 
 from typing import List, Dict
 from collections import defaultdict
+from datetime import datetime
+import logging
+
+
+# -----------------------------------------------------
+# ADDED: Logging (for backend monitoring)
+# -----------------------------------------------------
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("DIMDEA_ETHICAL_AI")
 
 
 class EthicalAI:
     """
     Ethical AI evaluation engine.
     """
+
+    # -----------------------------------------------------
+    # ADDED: Safe Division Utility
+    # -----------------------------------------------------
+    @staticmethod
+    def _safe_divide(a: float, b: float) -> float:
+        if b == 0:
+            return 0.0
+        return a / b
 
     # -----------------------------------------------------
     # 1. Demographic Parity Check
@@ -38,6 +57,9 @@ class EthicalAI:
         if len(predictions) != len(sensitive_attributes):
             raise ValueError("Predictions and sensitive attributes length mismatch.")
 
+        if not predictions:
+            return {}
+
         group_totals = defaultdict(int)
         group_positives = defaultdict(int)
 
@@ -48,10 +70,10 @@ class EthicalAI:
 
         rates = {}
         for group in group_totals:
-            if group_totals[group] == 0:
-                rates[group] = 0.0
-            else:
-                rates[group] = group_positives[group] / group_totals[group]
+            rates[group] = EthicalAI._safe_divide(
+                group_positives[group],
+                group_totals[group]
+            )
 
         return rates
 
@@ -71,6 +93,9 @@ class EthicalAI:
         if not (len(predictions) == len(actuals) == len(sensitive_attributes)):
             raise ValueError("Input lists must have same length.")
 
+        if not predictions:
+            return {}
+
         group_tp = defaultdict(int)
         group_actual_positive = defaultdict(int)
 
@@ -82,10 +107,10 @@ class EthicalAI:
 
         tpr = {}
         for group in group_actual_positive:
-            if group_actual_positive[group] == 0:
-                tpr[group] = 0.0
-            else:
-                tpr[group] = group_tp[group] / group_actual_positive[group]
+            tpr[group] = EthicalAI._safe_divide(
+                group_tp[group],
+                group_actual_positive[group]
+            )
 
         return tpr
 
@@ -100,6 +125,7 @@ class EthicalAI:
         """
 
         values = list(metric.values())
+
         if not values:
             return False
 
@@ -122,6 +148,7 @@ class EthicalAI:
         )
 
         explanations = []
+
         for feature, score in sorted_features:
             explanations.append(
                 f"Feature '{feature}' has influence score {round(score, 3)}"
@@ -145,6 +172,7 @@ class EthicalAI:
 
         if demographic_parity_bias:
             risk_points += 1
+
         if equal_opportunity_bias:
             risk_points += 1
 
@@ -160,7 +188,7 @@ class EthicalAI:
             "risk_score": str(risk_points)
         }
 
-        # -----------------------------------------------------
+    # -----------------------------------------------------
     # 6. Full Ethical Evaluation (Main Orchestrator)
     # -----------------------------------------------------
     def evaluate(
@@ -173,6 +201,8 @@ class EthicalAI:
         """
         Runs full ethical AI evaluation pipeline.
         """
+
+        logger.info("Running Ethical AI evaluation")
 
         # 1️⃣ Demographic Parity
         dp = self.demographic_parity(predictions, sensitive_attributes)
@@ -190,14 +220,53 @@ class EthicalAI:
         # 5️⃣ Explainability
         explanation = self.explainability_summary(feature_importance)
 
-        return {
+        result = {
             "demographic_parity": dp,
             "equal_opportunity": eo,
             "demographic_bias_detected": dp_bias,
             "equal_opportunity_bias_detected": eo_bias,
             "ethical_risk": risk,
-            "explainability": explanation
+            "explainability": explanation,
+
+            # ADDED: Metadata for AI governance
+            "evaluation_timestamp": datetime.utcnow().isoformat(),
+            "engine": "DIMDEA Ethical AI Engine v1.0"
         }
+
+        logger.info("Ethical AI evaluation complete")
+
+        return result
+
+    # -----------------------------------------------------
+    # ADDED: API READY WRAPPER
+    # -----------------------------------------------------
+    def evaluate_for_api(
+        self,
+        predictions: List[int],
+        actuals: List[int],
+        sensitive_attributes: List[str],
+        feature_importance: Dict[str, float]
+    ) -> Dict[str, object]:
+        """
+        Wrapper designed for FastAPI endpoints.
+        """
+
+        try:
+            return self.evaluate(
+                predictions,
+                actuals,
+                sensitive_attributes,
+                feature_importance
+            )
+        except Exception as e:
+
+            logger.error(f"Ethical AI error: {str(e)}")
+
+            return {
+                "error": str(e),
+                "engine": "DIMDEA Ethical AI Engine"
+            }
+
 
 # -----------------------------------------------------
 # Example Usage (Safe to Run)
@@ -230,6 +299,7 @@ if __name__ == "__main__":
     print(risk)
 
     print("\n--- Explainability ---")
+
     feature_importance = {
         "age": 0.45,
         "income": 0.32,
@@ -238,5 +308,6 @@ if __name__ == "__main__":
     }
 
     explanations = engine.explainability_summary(feature_importance)
+
     for e in explanations:
         print(e)

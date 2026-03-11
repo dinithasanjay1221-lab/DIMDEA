@@ -137,6 +137,32 @@ def get_emission_record(record_id: int):
         session.close()
 
 
+def get_latest_emission_record(as_dict: bool = True):
+    """
+    Fetch the most recent emission record.
+    Useful for frontend auto-loading the latest dataset.
+    """
+    session = SessionLocal()
+    try:
+        record = session.query(EmissionRecord).order_by(
+            EmissionRecord.created_at.desc()
+        ).first()
+        if not record:
+            return None
+        if as_dict:
+            return {
+                "transportation": record.transportation,
+                "energy": record.energy,
+                "industrial": record.industrial,
+                "waste": record.waste,
+                "renewable": record.renewable,
+                "baseline": record.baseline
+            }
+        return record
+    finally:
+        session.close()
+
+
 def save_simulation_result(result: dict):
     """
     Store simulation output in database.
@@ -195,3 +221,7 @@ if __name__ == "__main__":
 
     record = create_emission_record(emission_data)
     print("Inserted Emission Record:", record.id)
+
+    # Example fetch latest record
+    latest = get_latest_emission_record()
+    print("Latest Emission Record:", latest)

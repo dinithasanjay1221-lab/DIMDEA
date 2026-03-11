@@ -1,4 +1,7 @@
+# frontend/onboarding.py
 import streamlit as st
+import requests
+from frontend.api_client import send_onboarding_data  # <-- backend API client placeholder
 
 def render():
 
@@ -8,72 +11,29 @@ def render():
         layout="wide"
     )
 
+    # ---------------- SESSION STATE ----------------
+    if "org_name" not in st.session_state:
+        st.session_state.org_name = ""
+    if "industry" not in st.session_state:
+        st.session_state.industry = ""
+    if "goal" not in st.session_state:
+        st.session_state.goal = ""
+
     # --------------------------------------------------
-    # SAME CUSTOM CSS FROM home.py
+    # CUSTOM CSS
     # --------------------------------------------------
     st.markdown("""
     <style>
-
-    /* Main Background */
     .stApp {
         background: radial-gradient(circle at top, #0a192f, #020617);
         color: white;
     }
-
-    /* Hero Title */
-    .hero-title {
-        font-size: 60px;
-        font-weight: 900;
-        background: linear-gradient(90deg, #00c6ff, #0072ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 10px;
-        text-align: center;
-    }
-
-    /* Subtitle */
-    .hero-subtitle {
-        font-size: 22px;
-        color: #cbd5e1;
-        margin-bottom: 40px;
-        text-align: center;
-    }
-
-    /* Section Title */
-    .section-title {
-        font-size: 30px;
-        font-weight: 800;
-        margin-top: 40px;
-        margin-bottom: 25px;
-        text-align: center;
-        background: linear-gradient(90deg, #00c6ff, #22d3ee);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    /* Glass Card */
-    .feature-card {
-        background: rgba(15, 23, 42, 0.8);
-        padding: 30px;
-        border-radius: 18px;
-        border: 1px solid rgba(255,255,255,0.1);
-        transition: 0.4s ease;
-    }
-
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0px 10px 30px rgba(0, 198, 255, 0.4);
-        border: 1px solid #00c6ff;
-    }
-
-    .footer {
-        text-align: center;
-        margin-top: 80px;
-        padding-bottom: 40px;
-        font-size: 15px;
-        color: #64748b;
-    }
-
+    .hero-title { font-size: 60px; font-weight: 900; background: linear-gradient(90deg, #00c6ff, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; text-align: center; }
+    .hero-subtitle { font-size: 22px; color: #cbd5e1; margin-bottom: 40px; text-align: center; }
+    .section-title { font-size: 30px; font-weight: 800; margin-top: 40px; margin-bottom: 25px; text-align: center; background: linear-gradient(90deg, #00c6ff, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .feature-card { background: rgba(15, 23, 42, 0.8); padding: 30px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); transition: 0.4s ease; }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: 0px 10px 30px rgba(0, 198, 255, 0.4); border: 1px solid #00c6ff; }
+    .footer { text-align: center; margin-top: 80px; padding-bottom: 40px; font-size: 15px; color: #64748b; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -89,7 +49,6 @@ def render():
     st.markdown('<div class="section-title">Setup Process</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
-
     with col1:
         st.markdown("""
         <div class="feature-card">
@@ -97,7 +56,6 @@ def render():
         Register your organization and define sustainability objectives.
         </div>
         """, unsafe_allow_html=True)
-
     with col2:
         st.markdown("""
         <div class="feature-card">
@@ -105,7 +63,6 @@ def render():
         Provide transportation, industrial, and energy emission inputs.
         </div>
         """, unsafe_allow_html=True)
-
     with col3:
         st.markdown("""
         <div class="feature-card">
@@ -120,26 +77,33 @@ def render():
     st.markdown("<br>", unsafe_allow_html=True)
 
     with st.container():
-
-        org_name = st.text_input("Organization Name")
-
-        industry = st.selectbox("Industry Sector", [
+        st.session_state.org_name = st.text_input("Organization Name", value=st.session_state.org_name)
+        st.session_state.industry = st.selectbox("Industry Sector", [
             "Transportation",
             "Manufacturing",
             "Energy",
             "Logistics",
             "Smart Cities"
-        ])
-
-        goal = st.selectbox("Primary Sustainability Goal", [
+        ], index=["Transportation","Manufacturing","Energy","Logistics","Smart Cities"].index(st.session_state.industry) if st.session_state.industry else 0)
+        st.session_state.goal = st.selectbox("Primary Sustainability Goal", [
             "Carbon Neutrality",
             "Net Zero",
             "Emission Reduction",
             "ESG Compliance"
-        ])
+        ], index=["Carbon Neutrality","Net Zero","Emission Reduction","ESG Compliance"].index(st.session_state.goal) if st.session_state.goal else 0)
 
         if st.button("🚀 Start Setup"):
-            st.success("Onboarding initialized (Demo Mode).")
+            # Send data to backend (API call)
+            payload = {
+                "organization": st.session_state.org_name,
+                "industry": st.session_state.industry,
+                "goal": st.session_state.goal
+            }
+            try:
+                response = send_onboarding_data(payload)  # <-- implement in api_client
+                st.success(f"Onboarding initialized: {response.get('status', 'Success')}")
+            except:
+                st.warning("Demo Mode: Onboarding simulated (backend not connected).")
 
     # --------------------------------------------------
     # FOOTER
